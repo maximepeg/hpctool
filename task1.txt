@@ -1,6 +1,13 @@
+
+module load intel
+module laod imkl
+
+LDLIBS=-lopenblas make dgesv
+CC=icc LDLIBS=-mkl make dgesv
+
 1. What is the purpose of this code? What does the code compute to get it?
 
-   [...]
+   It initializes two random matrices and considers this a linear system of equation, the size of it is given in the argument passed when executing
 
 2. Briefly describe alternative mathematical methods to perform the same operation.
 
