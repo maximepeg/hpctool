@@ -1,0 +1,17 @@
+1. What is the purpose of this code? What does the code compute to get it?
+
+   [...]
+
+2. Briefly describe alternative mathematical methods to perform the same operation.
+
+   [...]
+
+3. What alternative(s) do you think is more demanding, from a computational point of view and in terms of memory consumption?
+
+   [...]
+
+4. What do you think can be the best candidate(s) for a parallel implementation?
+
+   [...]
+
+5. Choose one of the described methods to code your own sequential implementation in C, using the provided code skeleton.
