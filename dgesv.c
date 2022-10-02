@@ -10,7 +10,6 @@ double *generate_matrix(int size)
   int i;
   double *matrix = (double *) malloc(sizeof(double) * size * size);
 
-  srand(1);
 
   for (i = 0; i < size * size; i++) {
     matrix[i] = rand() % 100;
@@ -19,6 +18,19 @@ double *generate_matrix(int size)
   return matrix;
 }
 
+double *generate_vector(int size)
+{
+  int i;
+  double *vector = (double *) malloc(sizeof(double) * size);
+
+
+  for (i = 0; i < size * size; i++) {
+    vector[i] = 0;
+  }
+
+  return vector;
+
+}
 int is_nearly_equal(double x, double y)
 {
   const double epsilon = 1e-5 /* some small number */;
@@ -38,16 +50,65 @@ int check_result(double *bref, double *b, int size)
   return 1;
 }
 
-int my_dgesv(int n, int nrhs, double *a, int lda, int *ipiv, double *b, int ldb)
+double det(double *a, int lda)
+{
+    double det =1.0;
+    int i, j,k;
+    double tmp;
+
+    for (j=0; j<lda; j++0)
+    {
+      i_max = j;
+      for (i=0; i<lda; i++)
+        if(a[i*lda+j] > a[i_max*lda+j])
+          i_max = i;
+      
+      if (imax!=j)
+      {
+        for(k=0; k<lda; k++)
+        {
+            tmp = a[i_max*lda+k];
+            a[i_max*lda+k] = a[j*lda+k];
+            a[j*lda+k] = tmp;
+        }
+        det *= -1;
+
+      }
+        if (abs(a[j*(lda+1)]) < 1e-12)
+        {
+          printf("singular matrix");
+          return NAN;
+        }
+        for (i= j + 1; i < lda; i++)
+        {
+          double mult = -a[i*lda+j]/a[j*(lda+1)];
+          for(k = 0; k<lda; k++)
+            a[i*lda+k] += mult * a[j*lda + k];
+        }
+    } 
+
+    for (i=0; i < lda; i++)
+      det *= a[i*(lda+1)];
+    
+    return det;
+}
+
+double cramer()
 {
 
-  //Replace next line to use your own DGESV implementation
-  LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nrhs, a, lda, ipiv, b, ldb);
+} 
+
+double my_dgesv(int n, int nrhs, double *a, int lda, int *ipiv, double *b, int ldb)
+{
+
 
 }
 
 void main(int argc, char *argv[])
 {
+
+  ssrand(1);
+
   int size = atoi(argv[1]);
 
   double *a, *aref;
