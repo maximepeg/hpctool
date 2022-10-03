@@ -8,17 +8,34 @@ CC=icc LDLIBS=-mkl make dgesv
 1. What is the purpose of this code? What does the code compute to get it?
 
    It initializes two random matrices and considers this a linear system of equation, the size of it is given in the argument passed when executing
+   It uses the dgesv function of the openblas LAPack (linear algebra package), to compute the solution of the given system. 
+   The mathematical method used by dgesv is the "LU decomposition with partial pivoting" 
+   (source : https://netlib.org/lapack/explore-html/d7/d3b/group__double_g_esolve_ga5ee879032a8365897c3ba91e3dc8d512.html)
+
 
 2. Briefly describe alternative mathematical methods to perform the same operation.
 
-   [...]
+The Cramer's rule is another alternative to this, it uses calculation of the determinant of the system to create a solution
+aside from more mathematical solution, there are iterative solution that try to create a random guess of the solution before refining that guess
+in an iterative fashion. 
+
 
 3. What alternative(s) do you think is more demanding, from a computational point of view and in terms of memory consumption?
 
-   [...]
+The Cramer's rule is more demanding that the other since it requires the calculation of a determinant which is computationally very heavy, and requires to have several submatrices in memory
 
 4. What do you think can be the best candidate(s) for a parallel implementation?
 
-   [...]
+the cramer's rule although heavy might be interesting since it has a lot of independant calculation
+The iterative method requires a recursive sequence to be calculated which limits the amount of computation that can be parallelized
+the LU decomposition has the advantage of being lower in computation and having a lot of computation that don't depend on a previous iteration so it might be the best candidate
 
 5. Choose one of the described methods to code your own sequential implementation in C, using the provided code skeleton.
+
+I chose to implement the Cramer's rule into code since it was asked of us to code a pretty naïve method, but after testing the code
+we see that for a 64x64 matrix it takes about 2 seconds for the Cramer's rule to be implemented, 
+but when using a 128x 128 matrix it jumps up to 60 seconds.
+
+During the code I didn't pay attention to cache utilization, and taking advantage of some loop architecture, as it was asked of us to create something that wasn't "too fast"
+But seeing as it takes a whole minute for a 128x128 matrix, for the next assignement I will use another implementation to solve a linear system of equation
+(maybe the LU decomposition and use the LAPACKE implementation as a baseline to reach or the iterative method which seemed interesting although hard to parallelize)

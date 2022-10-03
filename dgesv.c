@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <openblas/lapacke.h>
 //#include <mkl_lapacke.h>
 
 double *generate_matrix(int size)
 {
+  srand(1);
   int i;
   double *matrix = (double *) malloc(sizeof(double) * size * size);
 
@@ -53,17 +55,17 @@ int check_result(double *bref, double *b, int size)
 double det(double *a, int lda)
 {
     double det =1.0;
-    int i, j,k;
+    int i, j, k, i_max;
     double tmp;
 
-    for (j=0; j<lda; j++0)
+    for (j=0; j<lda; j++)
     {
       i_max = j;
       for (i=0; i<lda; i++)
         if(a[i*lda+j] > a[i_max*lda+j])
           i_max = i;
       
-      if (imax!=j)
+      if (i_max!=j)
       {
         for(k=0; k<lda; k++)
         {
@@ -93,21 +95,37 @@ double det(double *a, int lda)
     return det;
 }
 
-double cramer()
+double cramer(double *a, int lda, double det_a, double *b, int var)
 {
+  double *tmp;
+  int i;
+  tmp = generate_matrix(lda);
+  memcpy(tmp, a, sizeof(*tmp));
 
+  for (i = 0; i < lda; i++)
+    tmp[i*lda+var] = b[var*lda+i];
+
+  double det_tmp = det(tmp, lda);  
+
+   
+  return det_tmp / det_a;
 } 
 
 double my_dgesv(int n, int nrhs, double *a, int lda, int *ipiv, double *b, int ldb)
 {
-
+  int i, j;
+  double *tmp;
+  double det_a;
+  det_a = det(a, lda);
+  for (i = 0; i < lda; i++)
+    for( j = 0; j < lda; j++)
+      b[i*lda + j] = cramer(a, lda, det_a, b, i);
 
 }
 
 void main(int argc, char *argv[])
 {
 
-  ssrand(1);
 
   int size = atoi(argv[1]);
 
@@ -132,6 +150,7 @@ void main(int argc, char *argv[])
   tStart = clock();
   my_dgesv(n, nrhs, a, lda, ipiv2, b, ldb);
   printf("Time taken by my implementation: %.2fs\n", (double) (clock() - tStart) / CLOCKS_PER_SEC);
+
 
   if (check_result(bref, b, size) == 1)
     printf("Result is ok!\n");
