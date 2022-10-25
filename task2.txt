@@ -1,0 +1,49 @@
+1024
+
+    O0      O1      O2      O3      Ofast
+
+GCC 10.52   4.60    4.18    3.97   3.68
+ICC 12.19   4.15    0.91    0.93    0.93
+
+2048
+
+    O0      O1      O2      O3      Ofast     
+
+GCC 144.53  58.77   66.63   53.35   46.40
+ICC 155.90  61.87   11.74   11.73   11.72
+
+4096
+    O0      O1      O2      O3      Ofast     
+
+GCC NA      NA      NA      NA      NA
+ICC NA      NA      109.56      109.78      109.82
+
+Vectorization Done by compiler report taken from the icc compilator on ofast:
+
+   LOOP BEGIN at dgesv.c(27,5) inlined into dgesv.c(190,5)
+      remark #15300: LOOP WAS VECTORIZED
+    
+    The matrix initilization function was vectorized, which seems relatively easy to see why. The setting of several adresses in memory to 0
+    without any dependencies between them are circumstances prone to vectorization
+
+    LOOP BEGIN at dgesv.c(73,5) inlined into dgesv.c(190,5)
+        remark #15301: PERMUTED LOOP WAS VECTORIZED
+    LOOP END
+
+    This one is the matrix multiplication, and we saw in class the exact same usecase in class with the ijk - ikj swap, which is what the compiler did to
+    take advantage of the cache pre fetching 
+
+
+   LOOP BEGIN at dgesv.c(82,3) inlined into dgesv.c(190,5)
+      remark #15300: LOOP WAS VECTORIZED
+   LOOP END
+
+    these two are the copying of the temporary array into the output array, it was vectorized for similarreason to the initialize_matrix vectorization
+    both of these also benefitted from peeling to help with vectorization
+
+    Most of the vectorization are variation of the example above, the whole report is available 
+
+    I am sorry for the quality and lateness of this report as my previous implementation was way too unoptimzed to be used in this exercise
+    the research and reimplmentation of a new method took quite some time, I finally settled for using the rosettacode implementation after realizing
+    how much time would be sunk into it. Since I have a job as a data scientist, I couldn't work until the late evening.
+    I do appreciate the class and the teaching you gave us, and am again very sorry for the lateness

@@ -83,7 +83,7 @@ void matmul(double *a, double *b, int n)
     b[i]=temp[i];
 
 }
-int gjinv (double *a, int n, double *b)
+int gjinv (double *a, int n, double *b) //source is rosettacode
 {
 	int i, j, k, p;
 	double f, g, tol;
