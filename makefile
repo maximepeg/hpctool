@@ -1,5 +1,5 @@
 dgesv_gcc: dgesv.c
-	gcc dgesv.c -lopenblas -o dgesv
+	gcc dgesv.c -lm -lopenblas -o dgesv
 dgesv_icc: dgesv.c
-	icc dgesv.c -mkl -o dgesv
+	icc dgesv.c -lm -mkl -o dgesv
  
