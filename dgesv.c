@@ -96,11 +96,12 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 		}
 	}
 
+    #pragma omp parallel for schedule(dynamic) private(i,k, j, p, f, g) shared(a, b) 
 	for (k = 0; k < n; ++k) {  /* Main loop */
 		f = fabs(a[k+k*n]);  /* Find pivot. */
 		p = k;
 
-        #pragma omp parallel for schedule(static) private(i, p, g, f) shared(a, k) 
+        //#pragma omp parallel for schedule(static) private(i, p, g, f) shared(a, k) 
 		for (i = k+1; i < n; ++i) {
 			g = fabs(a[k+i*n]);
 			if (g > f) {
@@ -108,17 +109,17 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 				p = i;
 			}
 		}
-		if (f < tol) return 1;  /* Matrix is singular. */
+		//if (f < tol) return 1;  /* Matrix is singular. */
 		if (p != k) {  /* Swap rows. */
 
-            #pragma omp parallel for schedule(static) private(j, f) shared(a) 
+            //#pragma omp parallel for schedule(static) private(j, f) shared(a) 
 			for (j = k; j < n; ++j) {
 				f = a[j+k*n];
 				a[j+k*n] = a[j+p*n];
 				a[j+p*n] = f;
 			}
 
-            #pragma omp parallel for schedule(static) private(j, f) shared(b) 
+            //#pragma omp parallel for schedule(static) private(j, f) shared(b) 
 			for (j = 0; j < n; ++j) {
 				f = b[j+k*n];
 				b[j+k*n] = b[j+p*n];
@@ -126,19 +127,19 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 			}
 		}
 		f = 1. / a[k+k*n];  /* Scale row so pivot is 1. */
-        #pragma omp parallel for schedule(static) private(j) shared(a) 
+        //#pragma omp parallel for schedule(static) private(j) shared(a) 
 		for (j = k; j < n; ++j) a[j+k*n] *= f;
 
-        #pragma omp parallel for schedule(static) private(j) shared(b) 
+        //#pragma omp parallel for schedule(static) private(j) shared(b) 
 		for (j = 0; j < n; ++j) b[j+k*n] *= f;
 
 		for (i = 0; i < n; ++i) {  /* Subtract to get zeros. */
 			if (i == k) continue;
 			f = a[k+i*n];
-            #pragma omp parallel for private(j) shared(a) 
+            //#pragma omp parallel for private(j) shared(a) 
 			for (j = k; j < n; ++j) a[j+i*n] -= a[j+k*n] * f;
 
-            #pragma omp parallel for private(j) shared(b) 
+            //#pragma omp parallel for private(j) shared(b) 
 			for (j = 0; j < n; ++j) b[j+i*n] -= b[j+k*n] * f;
 		}
 	}
