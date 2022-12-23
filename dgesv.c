@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <omp.h>
 #include <openblas/lapacke.h>
 //#include <mkl_lapacke.h>
 
@@ -32,18 +33,9 @@ double *initialize_matrix(int size)
     return matrix;
 }
 
-double *generate_vector(int size)
-{
-    int i;
-    double *vector = (double *)malloc(sizeof(double) * size);
 
-    for (i = 0; i < size * size; i++)
-    {
-        vector[i] = 0;
-    }
 
-    return vector;
-}
+
 int is_nearly_equal(double x, double y)
 {
     const double epsilon = 1e-5 /* some small number */;
@@ -72,14 +64,15 @@ void matmul(double *a, double *b, int n)
 
     #pragma omp parallel for collapse(3) private(i, j, k) shared(temp, a, b)
     for(i=0;i<n;i++)
-        for(j=0;j<n;j++)
-            for(k=0;k<n;k++)
+        for(k=0;k<n;k++)
+            for(j=0;j<n;j++)
                 temp[i*n+j] += a[i*n+k]*b[k*n+j];
 
     #pragma omp parallel for private(i) shared(b, temp)
     for(i=0;i<n*n;i++)
         b[i]=temp[i];
 
+    free(temp);
 }
 int gjinv (double *a, int n, double *b) //source is rosettacode
 {
@@ -139,11 +132,13 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
         #pragma omp parallel for schedule(static) private(j) shared(b) 
 		for (j = 0; j < n; ++j) b[j+k*n] *= f;
 
-        #pragma omp parallel for schedule(static) private(i, j, f) shared(a, b) 
 		for (i = 0; i < n; ++i) {  /* Subtract to get zeros. */
 			if (i == k) continue;
 			f = a[k+i*n];
+            #pragma omp parallel for private(j) shared(a) 
 			for (j = k; j < n; ++j) a[j+i*n] -= a[j+k*n] * f;
+
+            #pragma omp parallel for private(j) shared(b) 
 			for (j = 0; j < n; ++j) b[j+i*n] -= b[j+k*n] * f;
 		}
 	}
@@ -165,12 +160,16 @@ void display(double *a, int n)
 double my_dgesv(int n, int nrhs, double *a, int lda, int *ipiv, double *b, int ldb)
 {
   double *temp;
+  double start;
+  start = omp_get_wtime();
   temp = initialize_matrix(lda);
   gjinv(a, lda, temp);
   //display(temp,lda);
   //printf("\n");
   matmul(temp, b, lda);
   //display(b, lda);
+  free(temp);
+  printf("Wall Time elapsed %2f\n", omp_get_wtime()-start);
 
 }
 
@@ -193,6 +192,7 @@ void main(int argc, char *argv[])
     int *ipiv = (int *)malloc(sizeof(int) * size);
 
     clock_t tStart = clock();
+
     info = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nrhs, aref, lda, ipiv, bref, ldb);
     printf("Time taken by OpenBLAS LAPACK: %.2fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
 
@@ -209,4 +209,11 @@ void main(int argc, char *argv[])
         printf("Result is ok!\n");
     else
         printf("Result is wrong!\n");
+
+    free(a);
+    free(b);
+    free(aref);
+    free(bref);
+    free(ipiv);
+    free(ipiv2);
 }
