@@ -18,6 +18,7 @@ ICC 155.90  61.87   11.74   11.73   11.72
 GCC NA      NA      NA      NA      NA
 ICC NA      NA      109.56      109.78      109.82
 
+
 Vectorization Done by compiler report taken from the icc compilator on ofast:
 
    LOOP BEGIN at dgesv.c(27,5) inlined into dgesv.c(190,5)

@@ -31,6 +31,7 @@ double *initialize_matrix(int size)
 
     return matrix;
 }
+
 double *generate_vector(int size)
 {
     int i;
@@ -64,23 +65,20 @@ int check_result(double *bref, double *b, int size)
 }
 void matmul(double *a, double *b, int n)
 {
-  int i,j,k;
-  double sum;
-  double *temp;
-  temp = initialize_matrix(n);
-  for(i=0;i<n;i++)
-  {
-    for(j=0;j<n;j++)
-    {
-      for(k=0;k<n;k++)
-      {
-          temp[i*n+j] += a[i*n+k]*b[k*n+j];
-      }
-    }
-  }
+    int i,j,k;
+    double sum;
+    double *temp;
+    temp = initialize_matrix(n);
 
-  for(i=0;i<n*n;i++)
-    b[i]=temp[i];
+    #pragma omp parallel for collapse(3) private(i, j, k) shared(temp, a, b)
+    for(i=0;i<n;i++)
+        for(j=0;j<n;j++)
+            for(k=0;k<n;k++)
+                temp[i*n+j] += a[i*n+k]*b[k*n+j];
+
+    #pragma omp parallel for private(i) shared(b, temp)
+    for(i=0;i<n*n;i++)
+        b[i]=temp[i];
 
 }
 int gjinv (double *a, int n, double *b) //source is rosettacode
@@ -89,6 +87,7 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 	double f, g, tol;
 	if (n < 1) return -1;  /* Function Body */
 	f = 0.;  /* Frobenius norm of a */
+    #pragma omp parallel for collapse(2) private(i,j,g) shared(a) reduction(+: f) 
 	for (i = 0; i < n; ++i) {
 		for (j = 0; j < n; ++j) {
 			g = a[j+i*n];
@@ -97,14 +96,18 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 	}
 	f = sqrt(f);
 	tol = f * 2.2204460492503131e-016;
+    #pragma omp parallel for collapse(2) private(i,j) shared(b)
 	for (i = 0; i < n; ++i) {  /* Set b to identity matrix. */
 		for (j = 0; j < n; ++j) {
 			b[j+i*n] = (i == j) ? 1. : 0.;
 		}
 	}
+
 	for (k = 0; k < n; ++k) {  /* Main loop */
 		f = fabs(a[k+k*n]);  /* Find pivot. */
 		p = k;
+
+        #pragma omp parallel for schedule(static) private(i, p, g, f) shared(a, k) 
 		for (i = k+1; i < n; ++i) {
 			g = fabs(a[k+i*n]);
 			if (g > f) {
@@ -114,11 +117,15 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 		}
 		if (f < tol) return 1;  /* Matrix is singular. */
 		if (p != k) {  /* Swap rows. */
+
+            #pragma omp parallel for schedule(static) private(j, f) shared(a) 
 			for (j = k; j < n; ++j) {
 				f = a[j+k*n];
 				a[j+k*n] = a[j+p*n];
 				a[j+p*n] = f;
 			}
+
+            #pragma omp parallel for schedule(static) private(j, f) shared(b) 
 			for (j = 0; j < n; ++j) {
 				f = b[j+k*n];
 				b[j+k*n] = b[j+p*n];
@@ -126,8 +133,13 @@ int gjinv (double *a, int n, double *b) //source is rosettacode
 			}
 		}
 		f = 1. / a[k+k*n];  /* Scale row so pivot is 1. */
+        #pragma omp parallel for schedule(static) private(j) shared(a) 
 		for (j = k; j < n; ++j) a[j+k*n] *= f;
+
+        #pragma omp parallel for schedule(static) private(j) shared(b) 
 		for (j = 0; j < n; ++j) b[j+k*n] *= f;
+
+        #pragma omp parallel for schedule(static) private(i, j, f) shared(a, b) 
 		for (i = 0; i < n; ++i) {  /* Subtract to get zeros. */
 			if (i == k) continue;
 			f = a[k+i*n];
